@@ -7,17 +7,26 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define DEBUG
 
 struct no {
-	char palavra;
+	char simbolo;
 	int ocorrencias;
 	float frequencia_relativa;
 	struct no_lista *prox;
 	struct no_lista *esq;
 	struct no_lista *dir;
 } typedef node;
+
+struct {
+	char simbolo;
+	char codigo[200];
+} typedef node_table;
+
+static node_table *tabela = NULL;
+static node_table *fim_tabela = NULL;
 
 void iniciar_lista (node **lista)
 {
@@ -48,7 +57,7 @@ void imprimir_array(node *array, int qtd_nos)
 
 	int i;
     for(i = 0; i < qtd_nos; i++){
-        printf("%x", array[i].palavra);
+        printf("%x", array[i].simbolo);
         printf("/");
         printf("%d", array[i].ocorrencias);
 //      printf("/");
@@ -57,14 +66,14 @@ void imprimir_array(node *array, int qtd_nos)
     }
 }
 
-node *localizar_no(node **lista, char palavra) {
+node *localizar_no(node **lista, char simbolo) {
 
 	node *p = *lista;
 
 	if (p == NULL) { // verifica se a lista não está vazia
 		return NULL;
 	}else {
-		while (p != NULL && p->palavra != palavra) { // procura o nó que contem a palavra
+		while (p != NULL && p->simbolo != simbolo) { // procura o nó que contem a palavra
 			p = p-> prox;
 		}
 
@@ -157,33 +166,35 @@ node *remover_no_final(node **lista) {
     }
 }
 
-void reportar_ocorrencia(node **lista, char palavra) {
+void reportar_ocorrencia(node **lista, char simbolo) {
 
-	node *p = localizar_no(lista, palavra);
+	node *p = localizar_no(lista, simbolo);
 
 	if (p == NULL) {
 		node *n = calloc(1, sizeof(node));
-		n->palavra = palavra;
+		n->simbolo = simbolo;
 		n->ocorrencias = 1;
 		n->frequencia_relativa = 0;
 		n->prox = NULL;
+		n->esq = NULL;
+		n->dir = NULL;
 		inserir_no_final(lista, n);
 	}else {
 		p->ocorrencias++;
 	}
 }
 
-int contar_nos(node *lista) {
+int contar_simbolos(node *lista) {
 
 	node *p = lista;
-	int qtd_nos = 0;
+	int qtd_simbolos = 0;
 
 	while (p->prox != NULL) {
-		qtd_nos++;
+		qtd_simbolos++;
 		p = p->prox;
 	}
 
-	return qtd_nos;
+	return qtd_simbolos;
 }
 
 //int comparar_nos(node *a, node *b)
@@ -217,7 +228,7 @@ node *lista_to_array(node *lista, int qtd_nos) {
 
 	while (p->prox != NULL) { // transferindo os elementos
 		q = p;
-		r->palavra = p->palavra;
+		r->simbolo = p->simbolo;
 		r->ocorrencias = p->ocorrencias;
 		r->frequencia_relativa = p->frequencia_relativa;
 		r++;
@@ -240,7 +251,7 @@ node *array_to_lista(node **array, int qtd_nos) {
 		int i;
 		for (i = 0; i < qtd_nos; i++) {
 			node *n = calloc(1, sizeof(node));
-			n->palavra = p[i].palavra;
+			n->simbolo = p[i].simbolo;
 			n->ocorrencias = p[i].ocorrencias;
 			n->frequencia_relativa = p[i].frequencia_relativa;
 			n->prox = NULL;
@@ -312,9 +323,37 @@ node *gerar_arvore(node **lista) {
 			q->prox = NULL;
 
 			p = *lista;
-		} while ((*lista != NULL)); // na última passada a lista contém somente a raiz da árvore, o processo está completo. VERIFICAR!!!
+		} while ((p->prox != NULL)); // na última passada a lista contém somente a raiz da árvore, o processo está completo. VERIFICAR!!!
 
 		return n;
+	}
+}
+
+void inserir_elemento(char simbolo, char codigo[]) {
+	fim_tabela->simbolo = simbolo;
+	stpcpy(fim_tabela->codigo, codigo);
+	fim_tabela++;
+}
+
+void gerar_codigos(node *lista, char codigo[]) {
+
+	char s0[2] = "0";
+	char s1[2] = "1";
+
+	if (lista != NULL) {
+		if ((lista->esq == NULL) && (lista->dir == NULL)) {
+			inserir_elemento(lista->simbolo, codigo);
+#ifdef DEBUG
+			printf("[DEBUG]Foi inserido o par [%x | %s]", lista->simbolo, codigo);
+			printf("\n");
+#endif
+		}
+
+		int tamanho = 0;
+		gerar_codigos(lista->esq, strcat(codigo, s0));
+		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
+		gerar_codigos(lista->dir, strcat(codigo, s1));
+		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
 	}
 }
 
@@ -325,10 +364,10 @@ int main(int argc, char *argv[]) {
 //		exit (EXIT_FAILURE);
 //	}
 
-//	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
+	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
 //	argv[1] = "/home/ronie/development/musica.mp3";                                             // temporário
 //	argv[1] = "/home/ronie/development/senha";
-	argv[1] = "/home/ronie/development/teste";
+//	argv[1] = "/home/ronie/development/teste";
 
 	FILE *infile = fopen(argv[1], "r");
 
@@ -344,16 +383,34 @@ int main(int argc, char *argv[]) {
 		qtd_palavras++;
 	}
 
-	int qtd_nos = contar_nos(lista);
-	lista = ordenar_lista(&lista, qtd_nos);
-	setar_frequencias(&lista, qtd_palavras);
+	int qtd_simbolos = contar_simbolos(lista);
+	lista = ordenar_lista(&lista, qtd_simbolos);
+	setar_frequencias(&lista, qtd_simbolos);
 
 #ifdef DEBUG
 	imprimir_lista(lista);
 	printf("\n\n");
 #endif
 
+	tabela = calloc(qtd_simbolos, sizeof(node_table));
+	fim_tabela = tabela;
+
+	char vazio[1] = "";
 	node *arvore = gerar_arvore(&lista);
+	gerar_codigos(arvore, vazio);
+
+	printf("[INFO]Tabela de frequência -> ");
+	int i;
+	for(i = 0; i < qtd_simbolos; i++){
+		printf("[%x", tabela[i].simbolo);
+		printf("|");
+		printf("%s]", tabela[i].codigo);
+
+		printf(" ");
+	}
+	printf("\n\n");
+
+//	printf("FUNFOU!!!");
 
 	fclose(infile);
 	exit(EXIT_SUCCESS);
