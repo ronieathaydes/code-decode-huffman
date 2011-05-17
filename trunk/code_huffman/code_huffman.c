@@ -8,26 +8,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct no_lista {
+#define DEBUG
+
+struct no {
 	char palavra;
 	int ocorrencias;
 	float frequencia_relativa;
 	struct no_lista *prox;
-} typedef node_lista;
-
-struct no_arvore {
 	struct no_lista *esq;
 	struct no_lista *dir;
-} typedef node_arvore;
+} typedef node;
 
-void iniciar_lista (node_lista **lista)
+void iniciar_lista (node **lista)
 {
 	*lista = NULL;
 }
 
-void imprimir_lista(node_lista *lista) {
+void imprimir_lista(node *lista) {
 
-	node_lista *p = lista;
+	node *p = lista;
 
 	printf("Lista -> ");
 	while (p->prox != NULL) {
@@ -43,7 +42,7 @@ void imprimir_lista(node_lista *lista) {
 	printf(" NULL ");
 }
 
-void imprimir_array(node_lista *array, int qtd_nos)
+void imprimir_array(node *array, int qtd_nos)
 {
 	printf("Array -> ");
 
@@ -58,9 +57,9 @@ void imprimir_array(node_lista *array, int qtd_nos)
     }
 }
 
-node_lista *localizar_no(node_lista **lista, char palavra) {
+node *localizar_no(node **lista, char palavra) {
 
-	node_lista *p = *lista;
+	node *p = *lista;
 
 	if (p == NULL) { // verifica se a lista não está vazia
 		return NULL;
@@ -73,9 +72,9 @@ node_lista *localizar_no(node_lista **lista, char palavra) {
 	}
 }
 
-void inserir_no_final(node_lista **lista, node_lista *n) {
+void inserir_no_final(node **lista, node *n) {
 
-	node_lista *p = *lista;
+	node *p = *lista;
 
     if (p == NULL) { // verifica se a lista não está vazia
     	*lista = n;
@@ -88,41 +87,35 @@ void inserir_no_final(node_lista **lista, node_lista *n) {
     }
 }
 
-void inserir_no_ordenado(node_lista **lista, node_lista *n) {
+void inserir_no_ordenado(node **lista, node *n) {
 
-	node_lista *p, *q;
+	node *p, *q;
 
 	p = *lista;
     if (p == NULL) { // verifica se a lista não está vazia
     	*lista = n;
     }else {
-    	while ((p->prox != NULL) && (p->ocorrencias < n->ocorrencias)) { // procura a posição de inserção do novo nó
+    	while ((p != NULL) && (p->ocorrencias < n->ocorrencias)) { // procura a posição de inserção do novo nó
     		q = p;
     		p = p->prox;
     	}
 
-    	if (p == *lista) { // p é o primeiro da lista
-    		if (p->ocorrencias < n->ocorrencias) {
-    			p->prox = n;
-    			n->prox = NULL;
-    		}else {
-    			*lista = n;
-    			n->prox = p;
-    			p->prox = NULL;
-    		}
-    	}else if (p->prox == NULL) { // p é o ultimo da lista
-    		p->prox = n;
+    	if (p == *lista) { // o novo nó será o primeiro da lista
+			*lista = n;
+			n->prox = p;
+    	}else if (p == NULL) { // o novo no será o último da lista
+    		q->prox = n;
     		n->prox = NULL;
-    	}else {
+    	}else { // o novo nó será inserido no meio da lista
     		q->prox = n;
     		n->prox = p;
     	}
     }
 }
 
-node_lista *remover_no_final(node_lista **lista) {
+node *remover_no_final(node **lista) {
 
-	node_lista *p = *lista;
+	node *p = *lista;
 
     if (p == NULL) { // verifica se a lista não está vazia
     	return NULL;
@@ -137,12 +130,12 @@ node_lista *remover_no_final(node_lista **lista) {
     }
 }
 
-void reportar_ocorrencia(node_lista **lista, char palavra) {
+void reportar_ocorrencia(node **lista, char palavra) {
 
-	node_lista *p = localizar_no(lista, palavra);
+	node *p = localizar_no(lista, palavra);
 
 	if (p == NULL) {
-		node_lista *n = calloc(1, sizeof(node_lista));
+		node *n = calloc(1, sizeof(node));
 		n->palavra = palavra;
 		n->ocorrencias = 1;
 		n->frequencia_relativa = 0;
@@ -153,9 +146,9 @@ void reportar_ocorrencia(node_lista **lista, char palavra) {
 	}
 }
 
-int contar_nos(node_lista *lista) {
+int contar_nos(node *lista) {
 
-	node_lista *p = lista;
+	node *p = lista;
 	int qtd_nos = 0;
 
 	while (p->prox != NULL) {
@@ -171,10 +164,10 @@ int contar_nos(node_lista *lista) {
 //	return b->ocorrencias - a->ocorrencias;
 //}
 
-void buble_sort(node_lista *array, int qtd_nos) {
+void buble_sort(node *array, int qtd_nos) {
 
 	int i, j;
-	node_lista temp;
+	node temp;
 
 	for (i = 0; i < qtd_nos; i++) {
 		for (j = i; j < qtd_nos; j++) {
@@ -187,13 +180,13 @@ void buble_sort(node_lista *array, int qtd_nos) {
 	}
 }
 
-node_lista *lista_to_array(node_lista *lista, int qtd_nos) {
+node *lista_to_array(node *lista, int qtd_nos) {
 
-	node_lista *array = calloc(qtd_nos, sizeof(node_lista));
+	node *array = calloc(qtd_nos, sizeof(node));
 
-	node_lista *p = lista;
-	node_lista *q = NULL;
-	node_lista *r = array;
+	node *p = lista;
+	node *q = NULL;
+	node *r = array;
 
 	while (p->prox != NULL) { // transferindo os elementos
 		q = p;
@@ -209,9 +202,9 @@ node_lista *lista_to_array(node_lista *lista, int qtd_nos) {
 	return array;
 }
 
-node_lista *array_to_lista(node_lista **array, int qtd_nos) {
+node *array_to_lista(node **array, int qtd_nos) {
 
-	node_lista *lista, *p = *array;
+	node *lista, *p = *array;
 	iniciar_lista(&lista);
 
 	if (array == NULL) {
@@ -219,7 +212,7 @@ node_lista *array_to_lista(node_lista **array, int qtd_nos) {
 	}else {
 		int i;
 		for (i = 0; i < qtd_nos; i++) {
-			node_lista *n = calloc(1, sizeof(node_lista));
+			node *n = calloc(1, sizeof(node));
 			n->palavra = p[i].palavra;
 			n->ocorrencias = p[i].ocorrencias;
 			n->frequencia_relativa = p[i].frequencia_relativa;
@@ -232,9 +225,9 @@ node_lista *array_to_lista(node_lista **array, int qtd_nos) {
 	return lista;
 }
 
-node_lista *ordenar_lista(node_lista **lista, int qtd_nos) {
+node *ordenar_lista(node **lista, int qtd_nos) {
 
-	node_lista *array = lista_to_array(*lista, qtd_nos);
+	node *array = lista_to_array(*lista, qtd_nos);
 
 //	qsort(lista_ordenada, qtd_nos, sizeof(node), (void *)comparar_nos); // ordenando a lista
 	buble_sort(array, qtd_nos); // ordenando a lista
@@ -243,12 +236,45 @@ node_lista *ordenar_lista(node_lista **lista, int qtd_nos) {
 	return lista;
 }
 
-void setar_frequencias(node_lista **lista, int qtd_palavras) {
+void setar_frequencias(node **lista, int qtd_palavras) {
 
-	node_lista *p = *lista;
-	while (p->prox != NULL) {
+	node *p = *lista;
+	while (p != NULL) {
 		p->frequencia_relativa = (float)p->ocorrencias / qtd_palavras;
 		p = p->prox;
+	}
+}
+
+node *construir_arvore(node **lista) {
+
+	node *n, *q, *p = *lista;
+
+	if (p == NULL) {
+		return NULL;
+	}else if (p->prox == NULL) {
+		return p;
+		p->prox = NULL;
+		p->esq = NULL;
+		p->dir = NULL;
+	}else {
+		do {
+			q = p->prox;
+			*lista = q->prox;
+
+			n = calloc(1, sizeof(node));
+			n->frequencia_relativa = p->frequencia_relativa + q->frequencia_relativa;
+			n->esq = p;
+			n->dir = q;
+
+			inserir_no_ordenado(*lista, n);
+
+			p->prox = NULL;
+			q->prox = NULL;
+
+			p = *lista;
+		} while ((lista == NULL)); // falta coisa
+
+		return n;
 	}
 }
 
@@ -265,7 +291,7 @@ int main(int argc, char *argv[]) {
 
 	FILE *infile = fopen(argv[1], "r");
 
-	node_lista *lista;
+	node *lista;
 	iniciar_lista(&lista);
 
 	int qtd_palavras = 0;
