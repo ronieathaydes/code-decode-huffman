@@ -28,18 +28,18 @@ void imprimir_lista(node *lista) {
 
 	node *p = lista;
 
-	printf("Lista -> ");
-	while (p->prox != NULL) {
-		printf("%x", p->palavra);
-		printf("/");
-		printf("%d", p->ocorrencias);
-		printf("/");
+	printf("[INFO]Lista -> ");
+	while (p != NULL) {
+//		printf("%x", p->palavra);
+//		printf("/");
+//		printf("%d", p->ocorrencias);
+//		printf("/");
 		printf("%f", p->frequencia_relativa);
 		printf(" -> ");
 		p = p->prox;
 	}
 
-	printf(" NULL ");
+	printf("NULL");
 }
 
 void imprimir_array(node *array, int qtd_nos)
@@ -90,25 +90,52 @@ void inserir_no_final(node **lista, node *n) {
 void inserir_no_ordenado(node **lista, node *n) {
 
 	node *p, *q;
+#ifdef DEBUG
+	int i = 0;
+#endif
 
 	p = *lista;
     if (p == NULL) { // verifica se a lista não está vazia
     	*lista = n;
+#ifdef DEBUG
+    	printf("[DEBUG]O nó foi inserido no início da lista (a lista estava vazia).");
+    	printf("\n");
+#endif
     }else {
-    	while ((p != NULL) && (p->ocorrencias < n->ocorrencias)) { // procura a posição de inserção do novo nó
+    	while ((p != NULL) && (p->frequencia_relativa < n->frequencia_relativa)) { // procura a posição de inserção do novo nó
     		q = p;
     		p = p->prox;
+#ifdef DEBUG
+    		i++;
+#endif
     	}
+
+#ifdef DEBUG
+    	printf("[DEBUG]Foram deslocados %d nós", i);
+    	printf("\n");
+#endif
 
     	if (p == *lista) { // o novo nó será o primeiro da lista
 			*lista = n;
 			n->prox = p;
+#ifdef DEBUG
+    		printf("[DEBUG]O nó foi inserido no início da lista");
+    		printf("\n");
+#endif
     	}else if (p == NULL) { // o novo no será o último da lista
     		q->prox = n;
     		n->prox = NULL;
+#ifdef DEBUG
+    		printf("[DEBUG]O nó foi inserido no fim da lista");
+    		printf("\n");
+#endif
     	}else { // o novo nó será inserido no meio da lista
     		q->prox = n;
     		n->prox = p;
+#ifdef DEBUG
+    		printf("[DEBUG]O nó foi inserido no meio da lista");
+    		printf("\n");
+#endif
     	}
     }
 }
@@ -171,7 +198,7 @@ void buble_sort(node *array, int qtd_nos) {
 
 	for (i = 0; i < qtd_nos; i++) {
 		for (j = i; j < qtd_nos; j++) {
-			if (array[i].ocorrencias < array[j].ocorrencias) {
+			if (array[i].ocorrencias > array[j].ocorrencias) {
 				temp = array[i];
 				array[i] = array[j];
 				array[j] = temp;
@@ -245,9 +272,12 @@ void setar_frequencias(node **lista, int qtd_palavras) {
 	}
 }
 
-node *construir_arvore(node **lista) {
+node *gerar_arvore(node **lista) {
 
 	node *n, *q, *p = *lista;
+#ifdef DEBUG
+	int i = 0;
+#endif
 
 	if (p == NULL) {
 		return NULL;
@@ -266,13 +296,23 @@ node *construir_arvore(node **lista) {
 			n->esq = p;
 			n->dir = q;
 
-			inserir_no_ordenado(*lista, n);
+			p->prox = NULL;
+			q->prox = NULL;
 
+#ifdef DEBUG
+			printf("[DEBUG]%dº loop", ++i);
+			printf("\n");
+#endif
+			inserir_no_ordenado(lista, n);
+#ifdef DEBUG
+			imprimir_lista(*lista);
+			printf("\n\n");
+#endif
 			p->prox = NULL;
 			q->prox = NULL;
 
 			p = *lista;
-		} while ((lista == NULL)); // falta coisa
+		} while ((*lista != NULL)); // na última passada a lista contém somente a raiz da árvore, o processo está completo. VERIFICAR!!!
 
 		return n;
 	}
@@ -285,9 +325,10 @@ int main(int argc, char *argv[]) {
 //		exit (EXIT_FAILURE);
 //	}
 
-	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
+//	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
 //	argv[1] = "/home/ronie/development/musica.mp3";                                             // temporário
 //	argv[1] = "/home/ronie/development/senha";
+	argv[1] = "/home/ronie/development/teste";
 
 	FILE *infile = fopen(argv[1], "r");
 
@@ -303,27 +344,16 @@ int main(int argc, char *argv[]) {
 		qtd_palavras++;
 	}
 
-	imprimir_lista(lista);
-	printf("\n\n");
-
 	int qtd_nos = contar_nos(lista);
 	lista = ordenar_lista(&lista, qtd_nos);
 	setar_frequencias(&lista, qtd_palavras);
 
+#ifdef DEBUG
 	imprimir_lista(lista);
 	printf("\n\n");
+#endif
 
-
-
-//	para i $ 1 ate´ n # 1 fac¸ a
-//		alocar novo registro z; ! vertice de ´ T
-//		z.esq $ x $ EXTRAI MIN(Q);
-//		z.dir $ y $ EXTRAI MIN(Q);
-//		z.f $ x.f + y.f ;
-//		INSERE(Q, z);
-//		retorne EXTRAI MIN(Q)
-
-
+	node *arvore = gerar_arvore(&lista);
 
 	fclose(infile);
 	exit(EXIT_SUCCESS);
