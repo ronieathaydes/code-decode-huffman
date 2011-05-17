@@ -10,6 +10,7 @@
 #include <string.h>
 
 #define DEBUG
+#define TAMANHO_MAX_CODIGO 100
 
 struct no {
 	char simbolo;
@@ -22,7 +23,7 @@ struct no {
 
 struct {
 	char simbolo;
-	char codigo[200];
+	char codigo[TAMANHO_MAX_CODIGO];
 } typedef node_table;
 
 static node_table *tabela = NULL;
@@ -357,6 +358,35 @@ void gerar_codigos(node *lista, char codigo[]) {
 	}
 }
 
+void imprimir_tabela_codigos(int qtd_simbolos) {
+
+	int i;
+
+	printf("[INFO]Tabela de frequência -> ");
+	for(i = 0; i < qtd_simbolos; i++){
+		printf("[%x", tabela[i].simbolo);
+		printf("|");
+		printf("%s]", tabela[i].codigo);
+		printf(" ");
+	}
+}
+
+char *get_codigo(char simbolo) {
+
+	node_table *p = tabela;
+	char codigo[TAMANHO_MAX_CODIGO];
+
+	while (p != fim_tabela) {
+		if (p->simbolo == simbolo) {
+			strcpy(codigo, p->codigo);
+			return codigo;
+		}
+		else {
+			p++;
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
 
 //	if(argc != 2) {
@@ -364,12 +394,16 @@ int main(int argc, char *argv[]) {
 //		exit (EXIT_FAILURE);
 //	}
 
-	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
+//	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
 //	argv[1] = "/home/ronie/development/musica.mp3";                                             // temporário
 //	argv[1] = "/home/ronie/development/senha";
-//	argv[1] = "/home/ronie/development/teste";
+	argv[1] = "/home/ronie/development/teste";
 
-	FILE *infile = fopen(argv[1], "r");
+	FILE *infile;
+	if ((infile = fopen(argv[1], "rb")) == NULL) {
+		printf("O arquivo não pode ser aberto.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	node *lista;
 	iniciar_lista(&lista);
@@ -399,19 +433,34 @@ int main(int argc, char *argv[]) {
 	node *arvore = gerar_arvore(&lista);
 	gerar_codigos(arvore, vazio);
 
-	printf("[INFO]Tabela de frequência -> ");
-	int i;
-	for(i = 0; i < qtd_simbolos; i++){
-		printf("[%x", tabela[i].simbolo);
-		printf("|");
-		printf("%s]", tabela[i].codigo);
-
-		printf(" ");
-	}
+#ifdef DEBUG
+	printf("\n");
+	imprimir_tabela_codigos(qtd_simbolos);
 	printf("\n\n");
+#endif
 
-//	printf("FUNFOU!!!");
+	FILE *outfile_huff;
+	if ((outfile_huff = fopen("/home/ronie/development/arquivo_comprimido.huff", "wb")) == NULL) {
+		printf("O arquivo não pode ser aberto.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	rewind(infile); // resetando o arquivo de entrada
+
+	char *codigo[TAMANHO_MAX_CODIGO];
+	while (!feof(infile)) {
+		fread(&palavra, sizeof(char), 1, infile);
+
+		*codigo = get_codigo(palavra);
+
+		fwrite(codigo, sizeof(char), TAMANHO_MAX_CODIGO, outfile_huff);
+	}
+
+#ifdef DEBUG
+	printf("FUNFOU!!!");
+#endif
 
 	fclose(infile);
+	fclose(outfile_huff);
 	exit(EXIT_SUCCESS);
 }
