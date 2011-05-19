@@ -10,8 +10,8 @@
 #include <string.h>
 
 #define DEBUG
-#define TAMANHO_MAX_CODIGO 8
-#define FORMATO_IMPRESSAO "%x"
+#define TAMANHO_MAX_CODIGO 300
+#define FORMATO_IMPRESSAO "%c"
 
 struct no {
 	char simbolo;
@@ -68,7 +68,7 @@ void imprimir_array(node *array, int qtd_nos)
     }
 }
 
-node *localizar_no(node **lista, char simbolo) {
+node* localizar_no(node **lista, char simbolo) {
 
 	node *p = *lista;
 
@@ -151,7 +151,7 @@ void inserir_no_ordenado(node **lista, node *n) {
     }
 }
 
-node *remover_no_final(node **lista) {
+node* remover_no_final(node **lista) {
 
 	node *p = *lista;
 
@@ -191,7 +191,7 @@ int contar_simbolos(node *lista) {
 	node *p = lista;
 	int qtd_simbolos = 0;
 
-	while (p->prox != NULL) {
+	while (p != NULL) {
 		qtd_simbolos++;
 		p = p->prox;
 	}
@@ -220,7 +220,7 @@ void buble_sort(node *array, int qtd_nos) {
 	}
 }
 
-node *lista_to_array(node *lista, int qtd_nos) {
+node* lista_to_array(node *lista, int qtd_nos) {
 
 	node *array = calloc(qtd_nos, sizeof(node));
 
@@ -228,7 +228,7 @@ node *lista_to_array(node *lista, int qtd_nos) {
 	node *q = NULL;
 	node *r = array;
 
-	while (p->prox != NULL) { // transferindo os elementos
+	while (p != NULL) { // transferindo os elementos
 		q = p;
 		r->simbolo = p->simbolo;
 		r->ocorrencias = p->ocorrencias;
@@ -242,7 +242,7 @@ node *lista_to_array(node *lista, int qtd_nos) {
 	return array;
 }
 
-node *array_to_lista(node **array, int qtd_nos) {
+node* array_to_lista(node **array, int qtd_nos) {
 
 	node *lista, *p = *array;
 	iniciar_lista(&lista);
@@ -265,7 +265,7 @@ node *array_to_lista(node **array, int qtd_nos) {
 	return lista;
 }
 
-node *ordenar_lista(node **lista, int qtd_nos) {
+node* ordenar_lista(node **lista, int qtd_nos) {
 
 	node *array = lista_to_array(*lista, qtd_nos);
 
@@ -276,16 +276,16 @@ node *ordenar_lista(node **lista, int qtd_nos) {
 	return lista;
 }
 
-void setar_frequencias(node **lista, int qtd_palavras) {
+void setar_frequencias(node **lista, int total_simbolos) {
 
 	node *p = *lista;
 	while (p != NULL) {
-		p->frequencia_relativa = (float)p->ocorrencias / qtd_palavras;
+		p->frequencia_relativa = (float)p->ocorrencias / total_simbolos;
 		p = p->prox;
 	}
 }
 
-node *gerar_arvore(node **lista) {
+node* gerar_arvore(node **lista) {
 
 	node *n, *q, *p = *lista;
 #ifdef DEBUG
@@ -337,10 +337,10 @@ void inserir_elemento(char simbolo, char codigo[]) {
 	fim_tabela++;
 }
 
-void gerar_codigos(node *lista, char codigo[]) {
+void gerar_codigos(node *lista, char *codigo) {
 
-	char s0[2] = "0";
-	char s1[2] = "1";
+	char *c0 = "0";
+	char *c1 = "1";
 
 	if (lista != NULL) {
 		if ((lista->esq == NULL) && (lista->dir == NULL)) {
@@ -357,9 +357,9 @@ void gerar_codigos(node *lista, char codigo[]) {
 		}
 
 		int tamanho = 0;
-		gerar_codigos(lista->esq, strcat(codigo, s0));
+		gerar_codigos(lista->esq, strcat(codigo, c0));
 		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
-		gerar_codigos(lista->dir, strcat(codigo, s1));
+		gerar_codigos(lista->dir, strcat(codigo, c1));
 		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
 	}
 }
@@ -382,119 +382,54 @@ void imprimir_tabela_codigos(int qtd_simbolos) {
 	}
 }
 
-char *get_codigo(char simbolo) {
+char* get_codigo(char simbolo) {
 
 	node_table *p = tabela;
-	char *codigo;
 
 	while (p != fim_tabela) {
 		if (p->simbolo == simbolo) {
-//			strcpy(codigo, p->codigo);
 			return p->codigo;
 		}
 		else {
 			p++;
 		}
 	}
+
+	return NULL;
 }
 
-int main(int argc, char *argv[]) {
-
-//	if(argc != 2) {
-//		printf("Parametros inválidos.\n");
-//		exit (EXIT_FAILURE);
-//	}
-
-//	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
-	argv[1] = "/home/ronie/development/lero-lero.txt";
-//	argv[1] = "/home/ronie/development/musica.mp3";                                            // temporário
-//	argv[1] = "/home/ronie/development/teste";
-
-	FILE *infile;
-	if ((infile = fopen(argv[1], "rb")) == NULL) {
-		printf("O arquivo não pode ser aberto.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	node *lista;
-	iniciar_lista(&lista);
-
-	int qtd_palavras = 0;
-
-	char palavra;
-	while (!feof(infile)) {
-		fread(&palavra, sizeof(char), 1, infile);
-		reportar_ocorrencia(&lista, palavra);
-		qtd_palavras++;
-	}
-
-	int qtd_simbolos = contar_simbolos(lista);
-	lista = ordenar_lista(&lista, qtd_simbolos);
-	setar_frequencias(&lista, qtd_palavras);
-
-#ifdef DEBUG
-	imprimir_lista(lista);
-	printf("\n\n");
-#endif
-
-	tabela = calloc(qtd_simbolos, sizeof(node_table));
-	fim_tabela = tabela;
-
-	char vazio[1] = "";
-	node *arvore = gerar_arvore(&lista);
-	gerar_codigos(arvore, vazio);
-
-#ifdef DEBUG
-	printf("\n");
-//	imprimir_tabela_codigos(qtd_simbolos);
-//	printf("\n\n");
-#endif
-
-	FILE *outfile_huff;
-	if ((outfile_huff = fopen("/home/ronie/development/arquivo_comprimido.huff", "wb")) == NULL) {
-		printf("O arquivo de saída não pode ser criado.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	FILE *outfile_huftab;
-	if ((outfile_huftab = fopen("/home/ronie/development/arquivo_comprimido.huftab", "wb")) == NULL) {
-		printf("O arquivo de saída não pode ser criado.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	rewind(infile); // resetando o arquivo de entrada
+void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 
 	char *codigo;
 	int tamanho_codigo = 0;
-
 	char c0 = '0';
 	char c1 = '1';
 
 	int count_buffer = 0;
 	unsigned char buffer;
 
+	char simbolo;
 	while (!feof(infile)) {
-		fread(&palavra, sizeof(char), 1, infile);
-		codigo = get_codigo(palavra);
+		fread(&simbolo, sizeof(char), 1, infile);
+		codigo = get_codigo(simbolo);
 
 #ifdef DEBUG
-		printf("[INFO]Palavra: %c | Código: %s", palavra, codigo);
+		printf("[INFO]Palavra: %x | Código: %s", simbolo, codigo);
 		printf("\n");
 #endif
 
 		int i;
 		tamanho_codigo = strlen(codigo);
-
 		for (i = 0; i < tamanho_codigo; i++) {
 			if (codigo[i] == c0) {
 				buffer = (buffer << 1) | 0;
-			}else if (codigo[i] = c1) {
+			}else if (codigo[i] == c1) {
 				buffer = (buffer << 1) | 1;
 			}
 
 			count_buffer++;
 #ifdef DEBUG
-			printf("[INFO]CountBuffer = %d", count_buffer);
+		printf("[INFO]CountBuffer = %d", count_buffer);
 			printf("\n");
 #endif
 			if (count_buffer == 8) {
@@ -518,6 +453,98 @@ int main(int argc, char *argv[]) {
 		printf("\n");
 #endif
 	}
+}
+
+int main(int argc, char *argv[]) {
+
+//	if(argc != 2) {
+//		printf("Parametros inválidos.\n");
+//		exit (EXIT_FAILURE);
+//	}
+
+	argv[1] = "/home/ronie/development/lero-lero.txt";
+
+	FILE *infile;
+	if ((infile = fopen(argv[1], "rb")) == NULL) {
+		printf("O arquivo não pode ser aberto.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	FILE *outfile_huff;
+	if ((outfile_huff = fopen("/home/ronie/development/arquivo_comprimido.huff", "wb")) == NULL) {
+		printf("O arquivo de saída não pode ser criado.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	FILE *outfile_huftab;
+	if ((outfile_huftab = fopen("/home/ronie/development/arquivo_comprimido.huftab", "wb")) == NULL) {
+		printf("O arquivo de saída não pode ser criado.\n");
+		exit(EXIT_FAILURE);
+	}
+
+//	{
+//		TRATAMENTO DO NOME DO ARQUIVO
+//		int i = 0;
+//		char *str = argv[1];
+//		char nome_arquivo[50];nome_arquivo[0] = '\0';
+//		int count = strlen(str);
+//		int inicio = strlen(str);
+//		for (i = count; i >= 1; i--) {
+//			if (str[i] == '/') {
+//				break;
+//			}else {
+//				inicio--;
+//			}
+//		}
+//
+//		char *c = NULL;
+//		for (i = inicio; i < count; i++) {
+//			c = str[i];
+//			strcat(nome_arquivo, *c);
+//			i++;
+//		}
+//
+//		printf("%s", nome_arquivo);
+//		printf("\n\n");
+//	}
+
+	node *lista;
+	iniciar_lista(&lista);
+
+	char simbolo;
+	int total_simbolos = 0;
+	while (!feof(infile)) {
+		fread(&simbolo, sizeof(char), 1, infile);
+		reportar_ocorrencia(&lista, simbolo);
+		total_simbolos++;
+	}
+
+	int qtd_simbolos = contar_simbolos(lista);
+	lista = ordenar_lista(&lista, qtd_simbolos);
+
+	// persistindo tabela de ocorrências
+	fwrite(&qtd_simbolos, sizeof(int), 1, outfile_huftab);
+	node *array = lista_to_array(lista, qtd_simbolos);
+	int i;
+	for (i = 0; i < qtd_simbolos; i++) {
+		fwrite(&array[i], sizeof(node), 1, outfile_huftab);
+	}
+
+	lista = array_to_lista(&array, qtd_simbolos);
+	setar_frequencias(&lista, total_simbolos);
+
+	tabela = calloc(qtd_simbolos, sizeof(node_table));
+	fim_tabela = tabela;
+
+	node *arvore = gerar_arvore(&lista);
+
+	char vazio[TAMANHO_MAX_CODIGO];vazio[0] = '\0';
+	gerar_codigos(arvore, vazio);
+
+	// resetando o arquivo de entrada
+	rewind(infile);
+
+	codificar_arquivo(infile, outfile_huff, outfile_huftab);
 
 #ifdef DEBUG
 	printf("\n");
