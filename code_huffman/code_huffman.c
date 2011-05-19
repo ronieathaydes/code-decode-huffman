@@ -10,7 +10,8 @@
 #include <string.h>
 
 #define DEBUG
-#define TAMANHO_MAX_CODIGO 100
+#define TAMANHO_MAX_CODIGO 8
+#define FORMATO_IMPRESSAO "%x"
 
 struct no {
 	char simbolo;
@@ -40,10 +41,10 @@ void imprimir_lista(node *lista) {
 
 	printf("[INFO]Lista -> ");
 	while (p != NULL) {
-//		printf("%x", p->palavra);
-//		printf("/");
-//		printf("%d", p->ocorrencias);
-//		printf("/");
+		printf(FORMATO_IMPRESSAO, p->simbolo);
+		printf(" | ");
+		printf("%d", p->ocorrencias);
+		printf(" | ");
 		printf("%f", p->frequencia_relativa);
 		printf(" -> ");
 		p = p->prox;
@@ -324,7 +325,7 @@ node *gerar_arvore(node **lista) {
 			q->prox = NULL;
 
 			p = *lista;
-		} while ((p->prox != NULL)); // na última passada a lista contém somente a raiz da árvore, o processo está completo. VERIFICAR!!!
+		} while ((p->prox != NULL));
 
 		return n;
 	}
@@ -345,7 +346,12 @@ void gerar_codigos(node *lista, char codigo[]) {
 		if ((lista->esq == NULL) && (lista->dir == NULL)) {
 			inserir_elemento(lista->simbolo, codigo);
 #ifdef DEBUG
-			printf("[DEBUG]Foi inserido o par [%x | %s]", lista->simbolo, codigo);
+			char msg[100];
+			msg[0]= '\0';
+			strcat(msg, "[DEBUG]Foi inserido o par [");
+			strcat(msg, FORMATO_IMPRESSAO);
+			strcat(msg, " | %s]");
+			printf(msg, lista->simbolo, codigo);
 			printf("\n");
 #endif
 		}
@@ -362,9 +368,14 @@ void imprimir_tabela_codigos(int qtd_simbolos) {
 
 	int i;
 
-	printf("[INFO]Tabela de frequência -> ");
+	char formato[3];
+	formato[0] = '\0';
+	strcat(formato, "[");
+	strcat(formato, FORMATO_IMPRESSAO);
+
+	printf("[INFO]Tabela de codigos -> ");
 	for(i = 0; i < qtd_simbolos; i++){
-		printf("[%x", tabela[i].simbolo);
+		printf(formato, tabela[i].simbolo);
 		printf("|");
 		printf("%s]", tabela[i].codigo);
 		printf(" ");
@@ -374,12 +385,12 @@ void imprimir_tabela_codigos(int qtd_simbolos) {
 char *get_codigo(char simbolo) {
 
 	node_table *p = tabela;
-	char codigo[TAMANHO_MAX_CODIGO];
+	char *codigo;
 
 	while (p != fim_tabela) {
 		if (p->simbolo == simbolo) {
-			strcpy(codigo, p->codigo);
-			return codigo;
+//			strcpy(codigo, p->codigo);
+			return p->codigo;
 		}
 		else {
 			p++;
@@ -395,9 +406,9 @@ int main(int argc, char *argv[]) {
 //	}
 
 //	argv[1] = "/home/ronie/development/10-Organizando-Arquivos-para-Desempenho-Cont.pdf";
-//	argv[1] = "/home/ronie/development/musica.mp3";                                             // temporário
-//	argv[1] = "/home/ronie/development/senha";
-	argv[1] = "/home/ronie/development/teste";
+	argv[1] = "/home/ronie/development/lero-lero.txt";
+//	argv[1] = "/home/ronie/development/musica.mp3";                                            // temporário
+//	argv[1] = "/home/ronie/development/teste";
 
 	FILE *infile;
 	if ((infile = fopen(argv[1], "rb")) == NULL) {
@@ -419,7 +430,7 @@ int main(int argc, char *argv[]) {
 
 	int qtd_simbolos = contar_simbolos(lista);
 	lista = ordenar_lista(&lista, qtd_simbolos);
-	setar_frequencias(&lista, qtd_simbolos);
+	setar_frequencias(&lista, qtd_palavras);
 
 #ifdef DEBUG
 	imprimir_lista(lista);
@@ -435,32 +446,86 @@ int main(int argc, char *argv[]) {
 
 #ifdef DEBUG
 	printf("\n");
-	imprimir_tabela_codigos(qtd_simbolos);
-	printf("\n\n");
+//	imprimir_tabela_codigos(qtd_simbolos);
+//	printf("\n\n");
 #endif
 
 	FILE *outfile_huff;
 	if ((outfile_huff = fopen("/home/ronie/development/arquivo_comprimido.huff", "wb")) == NULL) {
-		printf("O arquivo não pode ser aberto.\n");
+		printf("O arquivo de saída não pode ser criado.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	FILE *outfile_huftab;
+	if ((outfile_huftab = fopen("/home/ronie/development/arquivo_comprimido.huftab", "wb")) == NULL) {
+		printf("O arquivo de saída não pode ser criado.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	rewind(infile); // resetando o arquivo de entrada
 
-	char *codigo[TAMANHO_MAX_CODIGO];
+	char *codigo;
+	int tamanho_codigo = 0;
+
+	char c0 = '0';
+	char c1 = '1';
+
+	int count_buffer = 0;
+	unsigned char buffer;
+
 	while (!feof(infile)) {
 		fread(&palavra, sizeof(char), 1, infile);
+		codigo = get_codigo(palavra);
 
-		*codigo = get_codigo(palavra);
+#ifdef DEBUG
+		printf("[INFO]Palavra: %c | Código: %s", palavra, codigo);
+		printf("\n");
+#endif
 
-		fwrite(codigo, sizeof(char), TAMANHO_MAX_CODIGO, outfile_huff);
+		int i;
+		tamanho_codigo = strlen(codigo);
+
+		for (i = 0; i < tamanho_codigo; i++) {
+			if (codigo[i] == c0) {
+				buffer = (buffer << 1) | 0;
+			}else if (codigo[i] = c1) {
+				buffer = (buffer << 1) | 1;
+			}
+
+			count_buffer++;
+#ifdef DEBUG
+			printf("[INFO]CountBuffer = %d", count_buffer);
+			printf("\n");
+#endif
+			if (count_buffer == 8) {
+				fwrite(&buffer, sizeof(char), 1, outfile_huff);
+				buffer = buffer << 8;
+				count_buffer = 0;
+#ifdef DEBUG
+				printf("[INFO]Esvaziando buffer...");
+				printf("\n");
+#endif
+			}
+		}
+	}
+
+	if (count_buffer > 0) {
+		fwrite(&buffer, sizeof(char), 1, outfile_huff);
+		buffer = buffer << 8;
+		count_buffer = 0;
+#ifdef DEBUG
+		printf("[INFO]Esvaziando buffer...");
+		printf("\n");
+#endif
 	}
 
 #ifdef DEBUG
+	printf("\n");
 	printf("FUNFOU!!!");
 #endif
 
 	fclose(infile);
 	fclose(outfile_huff);
+	fclose(outfile_huftab);
 	exit(EXIT_SUCCESS);
 }
