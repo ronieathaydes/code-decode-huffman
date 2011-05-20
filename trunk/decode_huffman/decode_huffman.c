@@ -10,7 +10,7 @@
 #include <string.h>
 
 #define BIT (char)0x01
-#define DEBUG
+//#define DEBUG
 
 struct no {
 	char simbolo;
@@ -195,50 +195,49 @@ void decodificar_arquivo(FILE *infile_huftab, FILE *outfile, node *arvore) {
 
 	char simbolo;
 
-	int count_buffer = 0;
+	int count_buffer = 7;
 	unsigned char buffer;
 
 	node *p = arvore;
 	fread(&buffer, sizeof(char), 1, infile_huftab);
 
-	while (!feof(infile_huftab)) {
-
-		while (((p->esq != NULL) && (p->dir != NULL)) || (count_buffer < 8)) {
+	do {
+		if ((p->esq == NULL) && (p->dir == NULL)) {
+			simbolo = p->simbolo;
+			fwrite(&simbolo, sizeof(char), 1, outfile);
+			p = arvore;
+		}else {
 			if (((BIT << count_buffer) & buffer) == 0) {
 				p = p->esq;
 			}else {
 				p = p->dir;
 			}
 
-			count_buffer++;
+			count_buffer--;
+			if (count_buffer < 0) {
+				fread(&buffer, sizeof(char), 1, infile_huftab);
+				count_buffer = 7;
+			}
 		}
 
-		if ((p->esq != NULL) && (p->dir != NULL)) {
-			simbolo = p->simbolo;
-			fwrite(&simbolo, sizeof(char), 1, outfile);
-			p = arvore;
-		}else if (count_buffer == 8) {
-			fread(&buffer, sizeof(char), 1, infile_huftab);
-			count_buffer = 0;
-		}
-	}
+	} while (!feof(infile_huftab));
 }
 
 int main(int argc, char *argv[]) {
 
-//	if(argc != 2) {
-//		printf("Parametros inválidos.\n");
-//		exit (EXIT_FAILURE);
-//	}
+	if(argc != 2) {
+		printf("Parametros inválidos.\n");
+		exit (EXIT_FAILURE);
+	}
 
 	FILE *infile_huftab;
-	if ((infile_huftab = fopen("/home/ronie/development/arquivo_comprimido.huftab", "rb")) == NULL) {
+	if ((infile_huftab = fopen("arquivo_comprimido.huftab", "rb")) == NULL) {
 		printf("O arquivo não pode ser aberto.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	FILE *outfile;
-	if ((outfile = fopen("/home/ronie/development/arquivo_comprimido.huftab", "rb")) == NULL) {
+	if ((outfile = fopen("arquivo_saida", "wb")) == NULL) {
 		printf("O arquivo não pode ser aberto.\n");
 		exit(EXIT_FAILURE);
 	}
