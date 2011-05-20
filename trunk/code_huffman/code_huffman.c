@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG
+//#define DEBUG
 #define TAMANHO_MAX_CODIGO 300
 #define FORMATO_IMPRESSAO "%c"
 
@@ -406,7 +406,7 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 	char c1 = '1';
 
 	int count_buffer = 0;
-	unsigned char buffer;
+	unsigned char buffer = 0;
 
 	char simbolo;
 	while (!feof(infile)) {
@@ -414,7 +414,7 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 		codigo = get_codigo(simbolo);
 
 #ifdef DEBUG
-		printf("[INFO]Palavra: %x | Código: %s", simbolo, codigo);
+		printf("[INFO]Palavra: %c | Código: %s", simbolo, codigo);
 		printf("\n");
 #endif
 
@@ -435,7 +435,7 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 			if (count_buffer == 8) {
 				fwrite(&buffer, sizeof(char), 1, outfile_huff);
 				fwrite(&buffer, sizeof(char), 1, outfile_huftab);
-				buffer = buffer << 8;
+				buffer = 0;
 				count_buffer = 0;
 #ifdef DEBUG
 				printf("[INFO]Esvaziando buffer...");
@@ -458,12 +458,13 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 
 int main(int argc, char *argv[]) {
 
-//	if(argc != 2) {
-//		printf("Parametros inválidos.\n");
-//		exit (EXIT_FAILURE);
-//	}
+	if(argc != 2) {
+		printf("Parametros inválidos.\n");
+		exit (EXIT_FAILURE);
+	}
 
-	argv[1] = "/home/ronie/development/lero-lero.txt";
+//	argv[1] = "/home/ronie/development/lero-lero.txt";
+//	argv[1] = "/home/ronie/development/teste.txt";
 
 	FILE *infile;
 	if ((infile = fopen(argv[1], "rb")) == NULL) {
@@ -471,14 +472,16 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+//	/home/ronie/development/
+
 	FILE *outfile_huff;
-	if ((outfile_huff = fopen("/home/ronie/development/arquivo_comprimido.huff", "wb")) == NULL) {
+	if ((outfile_huff = fopen("arquivo_comprimido.huff", "wb")) == NULL) {
 		printf("O arquivo de saída não pode ser criado.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	FILE *outfile_huftab;
-	if ((outfile_huftab = fopen("/home/ronie/development/arquivo_comprimido.huftab", "wb")) == NULL) {
+	if ((outfile_huftab = fopen("arquivo_comprimido.huftab", "wb")) == NULL) {
 		printf("O arquivo de saída não pode ser criado.\n");
 		exit(EXIT_FAILURE);
 	}
