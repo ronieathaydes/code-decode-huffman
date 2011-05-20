@@ -434,6 +434,7 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 #endif
 			if (count_buffer == 8) {
 				fwrite(&buffer, sizeof(char), 1, outfile_huff);
+				fwrite(&buffer, sizeof(char), 1, outfile_huftab);
 				buffer = buffer << 8;
 				count_buffer = 0;
 #ifdef DEBUG
@@ -522,7 +523,8 @@ int main(int argc, char *argv[]) {
 	int qtd_simbolos = contar_simbolos(lista);
 	lista = ordenar_lista(&lista, qtd_simbolos);
 
-	// persistindo tabela de ocorrências
+	// persistindo total de símbolos e tabela de ocorrências
+	fwrite(&total_simbolos, sizeof(int), 1, outfile_huftab);
 	fwrite(&qtd_simbolos, sizeof(int), 1, outfile_huftab);
 	node *array = lista_to_array(lista, qtd_simbolos);
 	int i;
