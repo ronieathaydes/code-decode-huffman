@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#define DEBUG
-#define TAMANHO_MAX_CODIGO 300
-#define FORMATO_IMPRESSAO "%c"
+#define TAMANHO_MAX_CODIGO 150
+#define TAMANHO_MAX_PATH 100
+#define TAMANHO_MAX_NOME_ARQUIVO 50
 
 struct no {
 	char simbolo;
@@ -33,39 +33,6 @@ static node_table *fim_tabela = NULL;
 void iniciar_lista (node **lista)
 {
 	*lista = NULL;
-}
-
-void imprimir_lista(node *lista) {
-
-	node *p = lista;
-
-	printf("[INFO]Lista -> ");
-	while (p != NULL) {
-		printf(FORMATO_IMPRESSAO, p->simbolo);
-		printf(" | ");
-		printf("%d", p->ocorrencias);
-		printf(" | ");
-		printf("%f", p->frequencia_relativa);
-		printf(" -> ");
-		p = p->prox;
-	}
-
-	printf("NULL");
-}
-
-void imprimir_array(node *array, int qtd_nos)
-{
-	printf("Array -> ");
-
-	int i;
-    for(i = 0; i < qtd_nos; i++){
-        printf("%x", array[i].simbolo);
-        printf("/");
-        printf("%d", array[i].ocorrencias);
-//      printf("/");
-//      printf("%f", array[i].frequencia_relativa);
-        printf("  ");
-    }
 }
 
 node* localizar_no(node **lista, char simbolo) {
@@ -101,52 +68,25 @@ void inserir_no_final(node **lista, node *n) {
 void inserir_no_ordenado(node **lista, node *n) {
 
 	node *p, *q;
-#ifdef DEBUG
-	int i = 0;
-#endif
 
 	p = *lista;
     if (p == NULL) { // verifica se a lista não está vazia
     	*lista = n;
-#ifdef DEBUG
-    	printf("[DEBUG]O nó foi inserido no início da lista (a lista estava vazia).");
-    	printf("\n");
-#endif
     }else {
     	while ((p != NULL) && (p->frequencia_relativa < n->frequencia_relativa)) { // procura a posição de inserção do novo nó
     		q = p;
     		p = p->prox;
-#ifdef DEBUG
-    		i++;
-#endif
     	}
 
-#ifdef DEBUG
-    	printf("[DEBUG]Foram deslocados %d nós", i);
-    	printf("\n");
-#endif
-
-    	if (p == *lista) { // o novo nó será o primeiro da lista
+    	if (p == *lista) {     // o novo nó será o primeiro da lista
 			*lista = n;
 			n->prox = p;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no início da lista");
-    		printf("\n");
-#endif
     	}else if (p == NULL) { // o novo no será o último da lista
     		q->prox = n;
     		n->prox = NULL;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no fim da lista");
-    		printf("\n");
-#endif
-    	}else { // o novo nó será inserido no meio da lista
+    	}else {                // o novo nó será inserido no meio da lista
     		q->prox = n;
     		n->prox = p;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no meio da lista");
-    		printf("\n");
-#endif
     	}
     }
 }
@@ -198,11 +138,6 @@ int contar_simbolos(node *lista) {
 
 	return qtd_simbolos;
 }
-
-//int comparar_nos(node *a, node *b)
-//{
-//	return b->ocorrencias - a->ocorrencias;
-//}
 
 void buble_sort(node *array, int qtd_nos) {
 
@@ -269,7 +204,6 @@ node* ordenar_lista(node **lista, int qtd_nos) {
 
 	node *array = lista_to_array(*lista, qtd_nos);
 
-//	qsort(lista_ordenada, qtd_nos, sizeof(node), (void *)comparar_nos); // ordenando a lista
 	buble_sort(array, qtd_nos); // ordenando a lista
 
 	lista = array_to_lista(&array, qtd_nos);
@@ -288,9 +222,6 @@ void setar_frequencias(node **lista, int total_simbolos) {
 node* gerar_arvore(node **lista) {
 
 	node *n, *q, *p = *lista;
-#ifdef DEBUG
-	int i = 0;
-#endif
 
 	if (p == NULL) {
 		return NULL;
@@ -312,18 +243,7 @@ node* gerar_arvore(node **lista) {
 			p->prox = NULL;
 			q->prox = NULL;
 
-#ifdef DEBUG
-			printf("[DEBUG]%dº loop", ++i);
-			printf("\n");
-#endif
 			inserir_no_ordenado(lista, n);
-#ifdef DEBUG
-			imprimir_lista(*lista);
-			printf("\n\n");
-#endif
-			p->prox = NULL;
-			q->prox = NULL;
-
 			p = *lista;
 		} while ((p->prox != NULL));
 
@@ -345,15 +265,6 @@ void gerar_codigos(node *lista, char *codigo) {
 	if (lista != NULL) {
 		if ((lista->esq == NULL) && (lista->dir == NULL)) {
 			inserir_elemento(lista->simbolo, codigo);
-#ifdef DEBUG
-			char msg[100];
-			msg[0]= '\0';
-			strcat(msg, "[DEBUG]Foi inserido o par [");
-			strcat(msg, FORMATO_IMPRESSAO);
-			strcat(msg, " | %s]");
-			printf(msg, lista->simbolo, codigo);
-			printf("\n");
-#endif
 		}
 
 		int tamanho = 0;
@@ -361,24 +272,6 @@ void gerar_codigos(node *lista, char *codigo) {
 		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
 		gerar_codigos(lista->dir, strcat(codigo, c1));
 		tamanho = strlen(codigo);codigo[tamanho-1] = '\0';
-	}
-}
-
-void imprimir_tabela_codigos(int qtd_simbolos) {
-
-	int i;
-
-	char formato[3];
-	formato[0] = '\0';
-	strcat(formato, "[");
-	strcat(formato, FORMATO_IMPRESSAO);
-
-	printf("[INFO]Tabela de codigos -> ");
-	for(i = 0; i < qtd_simbolos; i++){
-		printf(formato, tabela[i].simbolo);
-		printf("|");
-		printf("%s]", tabela[i].codigo);
-		printf(" ");
 	}
 }
 
@@ -413,11 +306,6 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 		fread(&simbolo, sizeof(char), 1, infile);
 		codigo = get_codigo(simbolo);
 
-#ifdef DEBUG
-		printf("[INFO]Palavra: %c | Código: %s", simbolo, codigo);
-		printf("\n");
-#endif
-
 		int i;
 		tamanho_codigo = strlen(codigo);
 		for (i = 0; i < tamanho_codigo; i++) {
@@ -428,19 +316,11 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 			}
 
 			count_buffer++;
-#ifdef DEBUG
-		printf("[INFO]CountBuffer = %d", count_buffer);
-			printf("\n");
-#endif
 			if (count_buffer == 8) {
 				fwrite(&buffer, sizeof(char), 1, outfile_huff);
 				fwrite(&buffer, sizeof(char), 1, outfile_huftab);
 				buffer = 0;
 				count_buffer = 0;
-#ifdef DEBUG
-				printf("[INFO]Esvaziando buffer...");
-				printf("\n");
-#endif
 			}
 		}
 	}
@@ -449,10 +329,6 @@ void codificar_arquivo(FILE *infile, FILE *outfile_huff, FILE *outfile_huftab) {
 		fwrite(&buffer, sizeof(char), 1, outfile_huff);
 		buffer = buffer << 8;
 		count_buffer = 0;
-#ifdef DEBUG
-		printf("[INFO]Esvaziando buffer...");
-		printf("\n");
-#endif
 	}
 }
 
@@ -463,8 +339,7 @@ int main(int argc, char *argv[]) {
 		exit (EXIT_FAILURE);
 	}
 
-//	argv[1] = "/home/ronie/development/lero-lero.txt";
-//	argv[1] = "/home/ronie/development/teste.txt";
+	char *inpath = argv[1];
 
 	FILE *infile;
 	if ((infile = fopen(argv[1], "rb")) == NULL) {
@@ -472,45 +347,36 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-//	/home/ronie/development/
+	// encontrando a última "\" ou "/" do path
+	char *final_path = NULL;
+	final_path = strrchr(inpath, '/');
+	if (final_path == NULL) {
+		*final_path = strrchr(inpath, '\\');
+	}
 
+	// definindo o path do arquivo de saída para o mesmo do arquivo de entrada
+	char outpath[TAMANHO_MAX_PATH] = "";
+	strncpy(outpath, inpath, (strlen(inpath) - strlen(final_path) + 1));
+
+	// juntando o path ao nome do arquivo .huff para abrí-lo
+	char outfile_huff_path[TAMANHO_MAX_PATH + TAMANHO_MAX_NOME_ARQUIVO] = "";
+	strcat(outfile_huff_path, outpath);
+	strcat(outfile_huff_path, "arquivo_comprimido.huff");
 	FILE *outfile_huff;
-	if ((outfile_huff = fopen("arquivo_comprimido.huff", "wb")) == NULL) {
+	if ((outfile_huff = fopen(outfile_huff_path, "wb")) == NULL) {
 		printf("O arquivo de saída não pode ser criado.\n");
 		exit(EXIT_FAILURE);
 	}
 
+	// juntando o path ao nome do arquivo .huftab para abrí-lo
+	char outfile_huftab_path[TAMANHO_MAX_PATH + TAMANHO_MAX_NOME_ARQUIVO] = "";
+	strcat(outfile_huftab_path, outpath);
+	strcat(outfile_huftab_path, "arquivo_comprimido.huftab");
 	FILE *outfile_huftab;
-	if ((outfile_huftab = fopen("arquivo_comprimido.huftab", "wb")) == NULL) {
+	if ((outfile_huftab = fopen(outfile_huftab_path, "wb")) == NULL) {
 		printf("O arquivo de saída não pode ser criado.\n");
 		exit(EXIT_FAILURE);
 	}
-
-//	{
-//		TRATAMENTO DO NOME DO ARQUIVO
-//		int i = 0;
-//		char *str = argv[1];
-//		char nome_arquivo[50];nome_arquivo[0] = '\0';
-//		int count = strlen(str);
-//		int inicio = strlen(str);
-//		for (i = count; i >= 1; i--) {
-//			if (str[i] == '/') {
-//				break;
-//			}else {
-//				inicio--;
-//			}
-//		}
-//
-//		char *c = NULL;
-//		for (i = inicio; i < count; i++) {
-//			c = str[i];
-//			strcat(nome_arquivo, *c);
-//			i++;
-//		}
-//
-//		printf("%s", nome_arquivo);
-//		printf("\n\n");
-//	}
 
 	node *lista;
 	iniciar_lista(&lista);
@@ -526,11 +392,18 @@ int main(int argc, char *argv[]) {
 	int qtd_simbolos = contar_simbolos(lista);
 	lista = ordenar_lista(&lista, qtd_simbolos);
 
-	// persistindo total de símbolos e tabela de ocorrências
+	// resgatando nome do arquivo
+	char nome_arquivo[TAMANHO_MAX_NOME_ARQUIVO] = "";
+	strcpy(nome_arquivo, ++final_path);
+
+	// persistindo nome do arquivo, total de símbolos e tabela de ocorrências
+	int i;
+	for (i = 0; i < TAMANHO_MAX_NOME_ARQUIVO; i++) {
+		fwrite(&nome_arquivo[i], sizeof(char), 1, outfile_huftab);
+	}
 	fwrite(&total_simbolos, sizeof(int), 1, outfile_huftab);
 	fwrite(&qtd_simbolos, sizeof(int), 1, outfile_huftab);
 	node *array = lista_to_array(lista, qtd_simbolos);
-	int i;
 	for (i = 0; i < qtd_simbolos; i++) {
 		fwrite(&array[i], sizeof(node), 1, outfile_huftab);
 	}
@@ -543,7 +416,7 @@ int main(int argc, char *argv[]) {
 
 	node *arvore = gerar_arvore(&lista);
 
-	char vazio[TAMANHO_MAX_CODIGO];vazio[0] = '\0';
+	char vazio[TAMANHO_MAX_CODIGO] = "";
 	gerar_codigos(arvore, vazio);
 
 	// resetando o arquivo de entrada
@@ -551,10 +424,17 @@ int main(int argc, char *argv[]) {
 
 	codificar_arquivo(infile, outfile_huff, outfile_huftab);
 
-#ifdef DEBUG
-	printf("\n");
-	printf("FUNFOU!!!");
-#endif
+	long size_infile = ftell(infile) + 1;
+	long size_outfile_huftab = ftell(outfile_huftab) + 1;
+	long size_outfile_huff = ftell(outfile_huff) + 1;
+	double taxa_compressao = 100 - ((double)size_outfile_huff / size_infile) * 100;
+
+	printf("O arquivo foi compactado com sucesso.\n");
+	printf("Tamanho do arquivo de entrada: %d bytes\n", size_infile);
+	printf("Tamanho do arquivo comprimido com a tabela: %d bytes\n", size_outfile_huftab);
+	printf("Tamanho do arquivo comprimido sem a tabela: %d bytes\n", size_outfile_huff);
+	printf("Taxa de compressão: %.2f%\n", taxa_compressao);
+
 
 	fclose(infile);
 	fclose(outfile_huff);
