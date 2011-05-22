@@ -10,7 +10,8 @@
 #include <string.h>
 
 #define BIT (char)0x01
-//#define DEBUG
+#define TAMANHO_MAX_PATH 100
+#define TAMANHO_MAX_NOME_ARQUIVO 50
 
 struct no {
 	char simbolo;
@@ -24,24 +25,6 @@ struct no {
 void iniciar_lista (node **lista)
 {
 	*lista = NULL;
-}
-
-void imprimir_lista(node *lista) {
-
-	node *p = lista;
-
-	printf("[INFO]Lista -> ");
-	while (p != NULL) {
-		printf("%c", p->simbolo);
-		printf(" | ");
-		printf("%d", p->ocorrencias);
-		printf(" | ");
-		printf("%f", p->frequencia_relativa);
-		printf(" -> ");
-		p = p->prox;
-	}
-
-	printf("NULL");
 }
 
 void inserir_no_final(node **lista, node *n) {
@@ -95,52 +78,25 @@ void setar_frequencias(node **lista, int total_simbolos) {
 void inserir_no_ordenado(node **lista, node *n) {
 
 	node *p, *q;
-#ifdef DEBUG
-	int i = 0;
-#endif
 
 	p = *lista;
     if (p == NULL) { // verifica se a lista não está vazia
     	*lista = n;
-#ifdef DEBUG
-    	printf("[DEBUG]O nó foi inserido no início da lista (a lista estava vazia).");
-    	printf("\n");
-#endif
     }else {
     	while ((p != NULL) && (p->frequencia_relativa < n->frequencia_relativa)) { // procura a posição de inserção do novo nó
     		q = p;
     		p = p->prox;
-#ifdef DEBUG
-    		i++;
-#endif
     	}
 
-#ifdef DEBUG
-    	printf("[DEBUG]Foram deslocados %d nós", i);
-    	printf("\n");
-#endif
-
-    	if (p == *lista) { // o novo nó será o primeiro da lista
+    	if (p == *lista) {     // o novo nó será inserido no início da lista
 			*lista = n;
 			n->prox = p;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no início da lista");
-    		printf("\n");
-#endif
-    	}else if (p == NULL) { // o novo no será o último da lista
+    	}else if (p == NULL) { // o novo no será inserido no final da lista
     		q->prox = n;
     		n->prox = NULL;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no fim da lista");
-    		printf("\n");
-#endif
-    	}else { // o novo nó será inserido no meio da lista
+    	}else {                // o novo nó será inserido no meio da lista
     		q->prox = n;
     		n->prox = p;
-#ifdef DEBUG
-    		printf("[DEBUG]O nó foi inserido no meio da lista");
-    		printf("\n");
-#endif
     	}
     }
 }
@@ -148,9 +104,6 @@ void inserir_no_ordenado(node **lista, node *n) {
 node* gerar_arvore(node **lista) {
 
 	node *n, *q, *p = *lista;
-#ifdef DEBUG
-	int i = 0;
-#endif
 
 	if (p == NULL) {
 		return NULL;
@@ -172,18 +125,7 @@ node* gerar_arvore(node **lista) {
 			p->prox = NULL;
 			q->prox = NULL;
 
-#ifdef DEBUG
-			printf("[DEBUG]%dº loop", ++i);
-			printf("\n");
-#endif
 			inserir_no_ordenado(lista, n);
-#ifdef DEBUG
-			imprimir_lista(*lista);
-			printf("\n\n");
-#endif
-			p->prox = NULL;
-			q->prox = NULL;
-
 			p = *lista;
 		} while ((p->prox != NULL));
 
@@ -230,20 +172,45 @@ int main(int argc, char *argv[]) {
 		exit (EXIT_FAILURE);
 	}
 
+	char *inpath = argv[1];
+
 	FILE *infile_huftab;
-	if ((infile_huftab = fopen("arquivo_comprimido.huftab", "rb")) == NULL) {
+	if ((infile_huftab = fopen(argv[1], "rb")) == NULL) {
 		printf("O arquivo não pode ser aberto.\n");
 		exit(EXIT_FAILURE);
 	}
 
+	// resgatando nome do arquivo
+	char nome_arquivo[TAMANHO_MAX_NOME_ARQUIVO] = "";
+	int i;
+	for (i = 0; i < TAMANHO_MAX_NOME_ARQUIVO; i++) {
+		fread(&nome_arquivo[i], sizeof(char), 1, infile_huftab);
+	}
+
+	// encontrando a última "\" ou "/" do path
+	char *final_path = NULL;
+	final_path = strrchr(inpath, '/');
+	if (final_path == NULL) {
+		*final_path = strrchr(inpath, '\\');
+	}
+
+	// definindo o path do arquivo de saída para o mesmo do arquivo de entrada
+	char outpath[TAMANHO_MAX_PATH] = "";
+	strncpy(outpath, inpath, (strlen(inpath) - strlen(final_path) + 1));
+
+	// juntando o path ao nome do arquivo para abrí-lo
+	char outfile_path[TAMANHO_MAX_PATH + TAMANHO_MAX_NOME_ARQUIVO] = "";
+	strcat(outfile_path, outpath);
+	strcat(outfile_path, nome_arquivo);
 	FILE *outfile;
-	if ((outfile = fopen("arquivo_saida", "wb")) == NULL) {
+	if ((outfile = fopen(outfile_path, "wb")) == NULL) {
 		printf("O arquivo não pode ser aberto.\n");
 		exit(EXIT_FAILURE);
 	}
+
+	int qtd_simbolos = 0, total_simbolos = 0;
 
 	// resgatando total de símbolos e tabela de ocorrências
-	int i, qtd_simbolos, total_simbolos = 0;
 	fread(&total_simbolos, sizeof(int), 1, infile_huftab);
 	fread(&qtd_simbolos, sizeof(int), 1, infile_huftab);
 	node *array = calloc(qtd_simbolos, sizeof(node));
@@ -256,6 +223,8 @@ int main(int argc, char *argv[]) {
 
 	node *arvore = gerar_arvore(&lista);
 	decodificar_arquivo(infile_huftab, outfile, arvore);
+
+	printf("O arquivo foi descompactado com sucesso.\n");
 
 	fclose(infile_huftab);
 	fclose(outfile);
